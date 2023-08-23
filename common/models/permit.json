@@ -1,0 +1,63 @@
+{
+  "name": "Permit",
+  "plural": "permits",
+  "base": "PersistedModel",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true
+  },
+  "properties": {
+    "userId": {
+      "type": "string",
+      "required": true
+    },
+    "permitInfo": {
+      "type": "string",
+      "required": true
+    },
+    "startDate": {
+      "type": "date",
+      "required": true
+    },
+    "endDate": {
+      "type": "date",
+      "required": true
+    },
+    "permitType": {
+      "type": "string",
+      "required": true,
+      "enum": [
+        "permission",
+        "onLeave",
+        "sick"
+      ],
+      "default": "permission"
+    },
+    "permitState": {
+      "type": "string",
+      "required": true,
+      "enum": [
+        "submitted",
+        "approved",
+        "rejected"
+      ],
+      "default": "submitted"
+    },
+    "createdAt": {
+      "type": "date"
+    },
+    "updatedAt": {
+      "type": "date"
+    }
+  },
+  "validations": [],
+  "relations": {
+    "employee": {
+      "type": "belongsTo",
+      "model": "Employee",
+      "foreignKey": ""
+    }
+  },
+  "acls": [],
+  "methods": {}
+}

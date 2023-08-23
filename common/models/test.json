@@ -1,0 +1,44 @@
+{
+    "name": "Test",
+    "plural": "test",
+    "base": "PersistedModel",
+    "idInjection": true,
+    "options": {
+      "validateUpsert": true
+    },
+    "properties": {
+      "testInfo": {
+        "type": "string",
+        "required": true
+      },
+      "startDate": {
+        "type": "date",
+        "required": true
+      },
+      "endDate": {
+        "type": "date",
+        "required": true
+      },
+      "testType": {
+        "type": "string",
+        "required": true,
+        "enum": [
+          "test1",
+          "test2",
+          "test3"
+        ],
+        "default": "test1"
+      }
+    },
+    "validations": [],
+    "relations": {
+      "employee": {
+        "type": "belongsTo",
+        "model": "Employee",
+        "foreignKey": ""
+      }
+    },
+    "acls": [],
+    "methods": {}
+  }
+  

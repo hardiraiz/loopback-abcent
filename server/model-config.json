@@ -1,0 +1,84 @@
+{
+  "_meta": {
+    "sources": [
+      "loopback/common/models",
+      "loopback/server/models",
+      "../common/models",
+      "./models"
+    ],
+    "mixins": [
+      "loopback/common/mixins",
+      "loopback/server/mixins",
+      "../common/mixins",
+      "./mixins"
+    ]
+  },
+  "User": {
+    "dataSource": "mongoDs",
+    "public": false
+  },
+  "AccessToken": {
+    "dataSource": "mongoDs",
+    "public": false
+  },
+  "ACL": {
+    "dataSource": "mongoDs",
+    "public": false
+  },
+  "RoleMapping": {
+    "dataSource": "mongoDs",
+    "public": false,
+    "options": {
+      "strictObjectIDCoercion": true
+    }
+  },
+  "Role": {
+    "dataSource": "mongoDs",
+    "public": false
+  },
+  "Employee": {
+    "dataSource": "mongoDs",
+    "public": true,
+    "options": {
+      "strict": true,
+      "remoting": {
+        "sharedMethods": {
+          "*": false,
+          "list": true,
+          "create": true,
+          "update": true,
+          "resetPassword": true,
+          "login": true,
+          "logout": true,
+          "detail": true,
+          "getUserDetail": true,
+          "updateUser": true,
+          "deleteUser": true
+        }
+      }
+    }
+  },
+  "Permit": {
+    "dataSource": "mongoDs",
+    "public": true
+  },
+  "Attendance": {
+    "dataSource": "mongoDs",
+    "public": true,
+    "options": {
+      "strict": true,
+      "remoting": {
+        "sharedMethods": {
+          "*": false,
+          "list": true,
+          "createAttendance": true,
+          "emailCheck": true
+        }
+      }
+    }
+  },
+  "Test": {
+    "dataSource": "db",
+    "public": true
+  }
+}

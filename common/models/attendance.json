@@ -1,0 +1,61 @@
+{
+  "name": "Attendance",
+  "plural": "attendances",
+  "base": "PersistedModel",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true
+  },
+  "properties": {
+    "userId": {
+      "type": "string",
+      "required": true
+    },
+    "checkInTime": {
+      "type": "date"
+    },
+    "checkOutTime": {
+      "type": "date"
+    },
+    "absentState": {
+      "type": "string",
+      "enum": [
+        "onTime",
+        "late",
+        "permission",
+        "sick",
+        "onLeave"
+      ],
+      "default": "onTime"
+    },
+    "createdAt": {
+      "type": "date"
+    },
+    "updatedAt": {
+      "type": "date"
+    }
+  },
+  "validations": [],
+  "relations": {
+    "employee": {
+      "type": "belongsTo",
+      "model": "Employee",
+      "foreignKey": ""
+    }
+  },
+  "acls": [
+    {
+      "accessType": "*",
+      "principalType": "ROLE",
+      "principalId": "$authenticated",
+      "permission": "ALLOW"
+    },
+    {
+      "accessType": "*",
+      "principalType": "ROLE",
+      "principalId": "$unauthenticated",
+      "permission": "DENY"
+    }
+  ],
+  "methods": {}
+}

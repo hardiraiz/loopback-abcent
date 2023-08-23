@@ -1,0 +1,45 @@
+{
+  "name": "Employee",
+  "plural": "employees",
+  "base": "User",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true
+  },
+  "properties": {
+    "fullname": {
+      "type": "string",
+      "required": true
+    },
+    "createdAt": {
+      "type": "date",
+      "required": false
+    },
+    "updatedAt": {
+      "type": "date",
+      "required": false
+    }
+  },
+  "validations": [],
+  "relations": {
+    "attendances": {
+      "type": "hasMany",
+      "model": "Attendance",
+      "foreignKey": "userId"
+    },
+    "permits": {
+      "type": "hasMany",
+      "model": "Permit",
+      "foreignKey": "userId"
+    }
+  },
+  "acls": [
+    {
+      "accessType": "*",
+      "principalType": "ROLE",
+      "principalId": "$authenticated",
+      "permission": "ALLOW"
+    }
+  ],
+  "methods": {}
+}
