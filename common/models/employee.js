@@ -8,7 +8,12 @@ module.exports = function(Employee) {
             const employees = await Employee.find({
                 fields: { id: true, fullname: true, email: true }
             });
-            return employees;
+            
+            return {
+                status: true,
+                message: 'SUCCESS_GET_LIST_EMPLOYEES',
+                employees
+            };
         } catch (error) {
             throw error;
         }
@@ -16,7 +21,7 @@ module.exports = function(Employee) {
 
     // route mengambil list user
     Employee.remoteMethod('list', {
-        returns: { arg: 'employess', type: 'array', root: true },
+        returns: { arg: 'result', type: 'object', root: true },
         http: { verb: 'get', path: '/list' }
     });
 
@@ -133,7 +138,7 @@ module.exports = function(Employee) {
                 id: userId
             });    
         } catch (error) {
-            res.status(error. statusCode || 500);
+            res.status(error.statusCode || 500);
             return {
                 status: false,
                 message: error.message
@@ -150,6 +155,58 @@ module.exports = function(Employee) {
         ],
         returns: { arg: 'result', type: 'object', root: true },
         http: { verb: 'delete', path: '/:userId' }
+    });
+
+    // controller to get employee with list attendance
+    Employee.attendances = async (req, res) => {
+        try {
+            // const userId = req.accessToken.userId;
+            // console.log("User ID: ", userId);
+            // const employee = await Employee.findById()
+
+            const employees = await Employee.find({
+                where: {},
+                fields: ['id', 'fullname'],
+                include: [
+                    {
+                        relation: 'attendances',
+                        scope: {
+                            fields: ['checkInTime', 'checkOutTime']
+                        },
+                        order: 'checkInTime DESC'
+                    },
+                    {
+                        relation: 'permits',
+                        scope: {
+                            fields: ['permitInfo', 'permitType']
+                        },
+                        order: 'startDate DESC'
+                    }
+                ]
+            });
+
+            return {
+                status: true,
+                message: 'SUCCESS_GET_USER_ATTENDANCES',
+                employees
+            }
+        } catch (error) {
+            res.status(error.statusCode || 500);
+            return {
+                status: false,
+                message: error.message
+            }
+        }
+    };
+
+    // route get employee with list attendance
+    Employee.remoteMethod('attendances', {
+        accepts: [
+            { arg: 'req', type: 'object', http: { source: 'req' }},
+            { arg: 'res', type: 'object', http: { source: 'res' }}
+        ],
+        returns: { arg: 'result', type: 'object', root: true },
+        http: { verb: 'get', path: '/attendances' }
     });
 
 };

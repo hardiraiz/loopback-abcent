@@ -53,14 +53,23 @@
           "detail": true,
           "getUserDetail": true,
           "updateUser": true,
-          "deleteUser": true
+          "deleteUser": true,
+          "attendances": true
         }
       }
     }
   },
   "Permit": {
     "dataSource": "mongoDs",
-    "public": true
+    "public": true,
+    "options": {
+      "strict": true,
+      "remoting": {
+        "sharedMethods": {
+          "*": false
+        }
+      }
+    }
   },
   "Attendance": {
     "dataSource": "mongoDs",
@@ -72,7 +81,7 @@
           "*": false,
           "list": true,
           "createAttendance": true,
-          "emailCheck": true
+          "updateAttendance": true
         }
       }
     }

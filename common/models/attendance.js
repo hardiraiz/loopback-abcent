@@ -1,6 +1,10 @@
 'use strict';
 
-const { emailExist } = require("../utils/emailExist");
+
+const moment = require('moment');
+const attendanceExist = require('../utils/attendanceExist');
+const startWorkingTime = require('../utils/startWorkingTime');
+
 
 module.exports = function(Attendance) {
 
@@ -37,11 +41,39 @@ module.exports = function(Attendance) {
     });
 
     // controller create attendance
-    Attendance.createAttendance = async (options, body, res) => {
+    Attendance.createAttendance = async (body, req, res) => {
         try {
-            const userId = options.accessToken.userId;
+            const userId = req.accessToken.userId;
+            
+            if (!body.checkInTime) {
+                res.status(404);
+                return {
+                    status: false,
+                    message: 'CHECK_IN_TIME_IS_REQUIRED'
+                }
+            }
+            
+            if (!moment(body.checkInTime).isValid()) {
+                res.status(400);
+                return {
+                    status: false,
+                    message: 'INVALID_CHECK_IN_TIME'
+                }
+            }
+
+            const isCheckInExist = await attendanceExist.checkInTimeExist(userId, body.checkInTime);
+            if (isCheckInExist) {
+                res.status(400);
+                return {
+                    status: false,
+                    message: 'CHECK_IN_TIME_ALREADY_EXIST'
+                }
+            }
+            
             const checkInTime = new Date(body.checkInTime);
-            const statusCheckIn = 'onTime';
+            const startTime = await startWorkingTime.startWorkingTime(body.checkInTime);
+
+            const statusCheckIn = startTime > checkInTime ? 'onTime' : 'late';
 
             const attendance = await Attendance.create({
                 userId: userId,
@@ -50,9 +82,11 @@ module.exports = function(Attendance) {
             });
 
             if (!attendance) {
-                throw Object.assign(new Error('CHECK_IN_TIME_FAILED_TO_RECORD'), {
-                    statusCode: error.statusCode || 500,
-                });
+                res.status(error.statusCode || 400);
+                return {
+                    status: false,
+                    message: 'CHECK_IN_TIME_FAILED_TO_RECORD'
+                }
             }
 
             res.status(201).json({
@@ -67,50 +101,143 @@ module.exports = function(Attendance) {
             });
 
         } catch (error) {
-            throw Object.assign(new Error(error.message), {
-                statusCode: error.statusCode || 500,
-            });
+            res.status(error.statusCode || 500);
+            return {
+                status: false,
+                message: error.message
+            }
         }
     };
 
     // route create attendance
     Attendance.remoteMethod('createAttendance', {
         accepts: [
-            { arg: 'options', type: 'object', http: 'optionsFromRequest' },
             { arg: 'body', type: 'object', root: true, required: true, http: { source: 'body' }},
+            { arg: 'req', type: 'object', http: { source: 'req' }},
             { arg: 'res', type: 'object', http: { source: 'res' }}
         ],
         returns: { arg: 'result', type: 'object', root: true },
         http: { verb: 'post', path: '/' }
     });
 
-    // route cek email exist
-    Attendance.emailCheck = async (email) => {
+    // controller update attendance
+    Attendance.updateAttendance = async (body, attendanceId, req, res) => {
         try {
-            // console.log("Email: ", email);
-            const isEmailExist = await emailExist(email);
-            if (isEmailExist) {
-                throw { message: 'EMAIL_EXIST', statusCode: 400 }
+            if (!attendanceId) {
+                res.status(404);
+                return { status: false, message: 'ATTENDANCE_ID_IS_REQUIRED' };
+            }
+    
+            if (!body.checkOutTime) {
+                res.status(404);
+                return { status: false, message: 'CHECK_OUT_TIME_IS_REQUIRED' };
+            }
+    
+            if (!moment(body.checkOutTime).isValid()) {
+                res.status(400);
+                return { status: false, message: 'INVALID_CHECK_OUT_TIME' };
+            }
+    
+            const attendance = await Attendance.findById(attendanceId);
+
+            if (!attendance) {
+                res.status(404);
+                return { status: false, message: 'ATTENDANCE_NOT_FOUND' };
+            }
+
+            if (attendance.checkOutTime) {
+                res.status(400);
+                return { status: false, message: 'CHECK_OUT_TIME_ALREADY_EXIST' };
+            }
+    
+            const startDay = new Date(attendance.checkInTime);
+            const endDay = new Date(body.checkOutTime);
+    
+            if (endDay < startDay) {
+                res.status(400);
+                return { status: false, message: 'CHECK_OUT_TIME_CANT_LESS_THAN_CHECK_IN_TIME' };
+            }
+    
+            const isSameDay = startDay.getUTCDate() === endDay.getUTCDate()
+                        && startDay.getUTCMonth() === endDay.getUTCMonth()
+                        && startDay.getUTCFullYear() === endDay.getUTCFullYear();
+    
+            if (!isSameDay) {
+                res.status(400);
+                return { status: false, message: 'CHECK_OUT_TIME_NOT_IN_SAME_DAY' }
+            }
+    
+            const checkOutTime = new Date(body.checkOutTime);
+            attendance.checkOutTime = checkOutTime;
+            
+            const updateAttendance = await attendance.save();
+    
+            if (!updateAttendance) {
+                res.status(400);
+                return { status: false, message: 'ATTENDANCE_UPDATE_FAILED' };
+            }
+    
+            res.status(200).json({
+                status: true,
+                message: 'SUCCESS_UPDATE_ATTENDANCE',
+                attendance: {
+                    id: attendance._id,
+                    checkInTime: attendance.checkInTime,
+                    checkOutTime: attendance.checkOutTime,
+                    absentState: attendance.absentState
+                }
+            });
+
+        } catch (error) {
+            res.status(error.statusCode || 500);
+            return { status: false, message: error.message };
+        }
+    }
+
+    Attendance.remoteMethod('updateAttendance', {
+        accepts: [
+            { arg: 'body', type: 'object', root: true, required: true, http: { source: 'body' }}, 
+            { arg: 'attendanceId', type: 'string', root: true, required: true, http: { source: 'path' }}, 
+            { arg: 'req', type: 'object', http: { source: 'req' }}, 
+            { arg: 'res', type: 'object', http: { source: 'res' }}
+        ],
+        returns: { arg: 'result', type: 'object', root: true },
+        http: { verb: 'put', path: '/:attendanceId' }
+    });
+
+    // controller check email
+    Attendance.emailCheck = async (email, res) => {
+        try {
+            const Employee = Attendance.app.models.Employee;
+
+            const employee = await Employee.findOne({ where: { email } });
+            if (employee) {
+                res.status(400);
+                return {
+                    status: false,
+                    message: 'EMAIL_IS_EXIST'
+                };
             }
 
             return {
                 status: true,
-                message: 'SUCCESS_CHECK_EMAIL',
-                isEmailExist: isEmailExist
-                // email: email
+                message: 'NEW_EMAIL_DETECTED'
             }
         } catch (error) {
-            throw { message: error.message, statusCode: error.statusCode || 500 }
+            throw Object.assign(new Error(error.message), {
+                statusCode: 500,
+            });
         }
     };
-
+    
+    // route cek email exist
     Attendance.remoteMethod('emailCheck', {
         accepts: [
             { arg: 'email', type: 'string', root: true, required: true, http: { source: 'query' }}, 
+            { arg: 'res', type: 'object', http: { source: 'res' }}, 
         ],
         returns: { arg: 'result', type: 'object', root: true },
         http: { verb: 'get', path: '/emailCheck' }
     });
-
 
 };
