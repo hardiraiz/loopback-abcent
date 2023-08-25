@@ -54,7 +54,9 @@
           "getUserDetail": true,
           "updateUser": true,
           "deleteUser": true,
-          "attendances": true
+          "attendances": true,
+          "onlyManager": true,
+          "onlyManager2": true
         }
       }
     }

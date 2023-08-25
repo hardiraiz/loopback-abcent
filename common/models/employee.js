@@ -209,4 +209,88 @@ module.exports = function(Employee) {
         http: { verb: 'get', path: '/attendances' }
     });
 
+    // controller only for manager limit by acl
+    Employee.onlyManager = async (req, res) => {
+        try {
+            res.status(200);
+            return {
+                status: true,
+                message: 'YOURE_A_MANAGER'
+            }
+        } catch (error) {
+            res.status(error.statusCode || 500);
+            return {
+                status: false,
+                message: 'FAILED_TO_CHECK_USER_ROLE: ' + error.message
+            }
+        }
+    };
+
+    // route only for manager limit by acl
+    Employee.remoteMethod('onlyManager', {
+        accepts: [
+            { arg: 'req', type: 'object', http: { source: 'req' }},
+            { arg: 'res', type: 'object', http: { source: 'res' }}
+        ],
+        returns: { arg: 'result', type: 'object', root: true },
+        http: { verb: 'get', path: '/manager-only' }
+    });
+
+
+    // route only for manager limit by route
+    // lebih simple menerapkan user role dan access melalui acl
+    // ini hanya percobaan
+    Employee.onlyManager2 = async (req, res) => {
+        try {
+            const RoleMapping = Employee.app.models.RoleMapping;
+
+            const userId = req.accessToken && req.accessToken.userId;
+            const roleMapping = await RoleMapping.findOne({ 
+                where: { principalId: userId },
+                fields: { principalId: 'userId', roleId: 'roleId' },
+                include: {
+                    relation: 'role',
+                    scope: {
+                        where: { id: '${roleId}' },
+                        fileds: ['name']
+                    }
+                } 
+            });
+
+            console.info("Role Mappings: ", roleMapping)
+            if (!roleMapping.role.name === 'manager') {
+                res.status(401);
+                return {
+                    status: false,
+                    message: 'YOU_DONT_HAVE_ACCESS'
+                }
+            }
+
+            const employee = await Employee.findById(userId);
+            res.status(200);
+            return {
+                status: true,
+                message: 'SUCCESS_GET_YOUR_PROFILE',
+                employee
+            }
+        } catch (error) {
+            res.status(error.statusCode || 500);
+            return {
+                status: false,
+                message: 'FAILED_TO_CHECK_USER_ROLE: ' + error.message
+            }
+        }
+    }
+
+    // route only for manager limit by route doesnt work
+    Employee.remoteMethod('onlyManager2', {
+        http: { verb: 'get', path: '/manager-only-2' },
+        roles: ['manager'],
+        accepts: [
+            { arg: 'req', type: 'object', http: { source: 'req' }},
+            { arg: 'res', type: 'object', http: { source: 'res' }}
+        ],
+        returns: { arg: 'result', type: 'object', root: true }
+    });
+
 };
