@@ -1,5 +1,3 @@
-
-
 module.exports = function(app) {
     const { Employee, Role, RoleMapping } = app.models;
 

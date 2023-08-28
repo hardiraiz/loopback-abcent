@@ -257,8 +257,7 @@ module.exports = function(Employee) {
                 } 
             });
 
-            console.info("Role Mappings: ", roleMapping)
-            if (!roleMapping.role.name === 'manager') {
+            if (!roleMapping || !roleMapping.role.name === 'manager') {
                 res.status(401);
                 return {
                     status: false,
